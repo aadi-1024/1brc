@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: '3'
+
+tasks:
+  cc:
+    cmds:
+    - sudo sh -c "echo 3 > /proc/sys/vm/drop_caches"
+    desc: "cleares the cache in order to prevent inconsistent results"
+  gen:
+    cmds:
+      - python3 scripts/gen_data.py data_min.csv res_min.csv 100000000
+    desc: "generate the sample data"
+  check:
+    cmds:
+      - python3 scripts/check.py res_min.csv out.csv
+    desc: "check for validity"
+  run:
+    requires:
+      vars:
+      - name: RUNNER
+    cmds:
+      - task: cc
+      - go run . {{.RUNNER}} data_min.csv out.csv
+    desc: "run the code"
+  rc:
+    cmds:
+      - task: run
+      - task: check
+    desc: "run and check on the sample dataset"
+  # all tasks suffixed with b operate on the actual 1B row dataset
+  genb:
+    cmds:
+      - python3 scripts/gen_data.py data.csv res.csv 1000000000
+    desc: "generate the sample data"
+  checkb:
+    cmds:
+      - python3 scripts/check.py res.csv out.csv
+    desc: "check for validity"
+  runb:
+    requires:
+      vars:
+      - name: RUNNER
+    cmds:
+      - task: cc
+      - go run . {{.RUNNER}} data.csv out.csv
+    desc: "run the code"
+  rcb:
+    cmds:
+      - task: runb
+      - task: checkb
+    desc: "run and check on the sample dataset"
